@@ -117,3 +117,94 @@ func TestMultipleSubscribers(t *testing.T) {
 // 		t.Error("Unsubscribing a non-existing subscriber caused issues")
 // 	}
 // }
+
+func TestSetState(t *testing.T) {
+	var stateName1 string = "testState1"
+	var stateValue1 bool = true
+	ps := NewPubSub()
+	ps.SetState(stateName1, stateValue1)
+	state, found := ps.GetState(stateName1)
+	if !found {
+		t.Error("state not found")
+	}
+	if state != stateValue1 {
+		t.Error("state not set")
+	}
+}
+
+func TestStateEquals(t *testing.T) {
+	var stateName1 string = "testState1"
+	var stateValue1 bool = true
+	ps := NewPubSub()
+	ps.SetState(stateName1, stateValue1)
+	ok := ps.StateEquals(stateName1, stateValue1)
+	if !ok {
+		t.Error("state not equal")
+	}
+}
+
+func TestStateNotEquals(t *testing.T) {
+	var stateName1 string = "testState1"
+	var stateValue1 bool = true
+	ps := NewPubSub()
+	ps.SetState(stateName1, stateValue1)
+	ok := ps.StateEquals(stateName1, !stateValue1)
+	if ok {
+		t.Error("state equal")
+	}
+}
+
+func TestStateNotExists(t *testing.T) {
+	var stateName1 string = "testState1"
+	ps := NewPubSub()
+	_, found := ps.GetState(stateName1)
+	if found {
+		t.Error("state found")
+	}
+}
+
+func TestHasState(t *testing.T) {
+	var stateName1 string = "testState1"
+	var stateValue1 bool = true
+	ps := NewPubSub()
+	ps.SetState(stateName1, stateValue1)
+	ok := ps.HasState(stateName1)
+	if !ok {
+		t.Error("state not found")
+	}
+}
+
+func TestHasNoState(t *testing.T) {
+	var stateName1 string = "testState1"
+	ps := NewPubSub()
+	ok := ps.HasState(stateName1)
+	if ok {
+		t.Error("state found")
+	}
+}
+
+func TestSetStates(t *testing.T) {
+	var stateName1 string = "testState1"
+	var stateValue1 bool = true
+	var stateName2 string = "testState2"
+	var stateValue2 bool = false
+	ps := NewPubSub()
+	ps.SetStates(map[string]interface{}{
+		stateName1: stateValue1,
+		stateName2: stateValue2,
+	})
+	state, found := ps.GetState(stateName1)
+	if !found {
+		t.Error("state not found")
+	}
+	if state != stateValue1 {
+		t.Error("state not set")
+	}
+	state, found = ps.GetState(stateName2)
+	if !found {
+		t.Error("state not found")
+	}
+	if state != stateValue2 {
+		t.Error("state not set")
+	}
+}
