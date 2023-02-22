@@ -213,3 +213,18 @@ func (p *PubSub) SetStates(states map[string]any) {
 		p.states.Store(key, value)
 	}
 }
+
+// HasState checks if a state exists
+func (p *PubSub) HasState(key string) bool {
+	_, ok := p.states.Load(key)
+	return ok
+}
+
+// StateEquals checks if a state exists and equals a value
+func (p *PubSub) StateEquals(key string, value any) bool {
+	state, ok := p.states.Load(key)
+	if !ok {
+		return false
+	}
+	return state == value
+}

@@ -104,6 +104,16 @@ detailed examples coming.. soon ... ;)
 ```go
 ```
 
+### HasState(key string) bool
+
+```go
+```
+
+### StateEquals(key string, value any) bool
+
+```go
+```
+
 ### DeleteState(key string)
 
 ```go
@@ -116,6 +126,7 @@ detailed examples coming.. soon ... ;)
 
 ## VERSIONS
 
+* v0.2.1 added StateEquals and HasState methods
 * v0.2.0 added States to the PubSub with the ability to .PublishAsState . States can be used independently from publish calls as well for convenience.
 * v0.1.0 initial version of the gvents package.
 
