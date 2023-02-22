@@ -15,22 +15,28 @@ import (
 
 var ErrFailedToSubscribe error = errors.New("failed to subscribe")
 
+// Event is the event struct used by gvents
 type Event struct {
 	Name   string
 	Data   any
 	Cancel bool
 } // @name Event
 
+// PubSub is the main struct for gvents
 type PubSub struct {
 	subscribers sync.Map
+	states      sync.Map // string -> any
 } // @name PubSub
 
+// NewPubSub creates a new PubSub instance
 func NewPubSub() *PubSub {
 	return &PubSub{
 		subscribers: sync.Map{},
+		states:      sync.Map{},
 	}
 }
 
+// Subscribe subscribes a handler to an event
 func (p *PubSub) Subscribe(eventName string, handlerName string, handler func(*Event)) (handlerId string, err error) {
 	err = nil
 	handlerId = uuid.New().String() + ":" + handlerName
@@ -50,6 +56,7 @@ func (p *PubSub) Subscribe(eventName string, handlerName string, handler func(*E
 	return handlerId, err
 }
 
+// Unsubscribe unsubscribes a handler from an event
 func (p *PubSub) Unsubscribe(eventName string, id string) (foundEvent bool, foundAndDeletedHandler bool) {
 	foundAndDeletedHandler = false // // DEBUG
 	// fmt.Printf("===> UN-SUBSCRIBE: \n%s\n", p.SubList(eventName))
@@ -69,6 +76,13 @@ func (p *PubSub) Unsubscribe(eventName string, id string) (foundEvent bool, foun
 	return foundEvent, foundAndDeletedHandler
 }
 
+// PublishAsState publishes an event and set the eventname + data as state
+func (p *PubSub) PublishAsState(thisEvent *Event) (eventFound bool, handlerIds []string) {
+	p.states.Store(thisEvent.Name, thisEvent.Data)
+	return p.Publish(thisEvent)
+}
+
+// Publish publishes an event
 func (p *PubSub) Publish(thisEvent *Event) (eventFound bool, handlerIds []string) {
 	eventFound = false
 	handlerIds = []string{}
@@ -102,16 +116,21 @@ func (p *PubSub) Publish(thisEvent *Event) (eventFound bool, handlerIds []string
 	return eventFound, handlerIds
 }
 
+// CancelEvent cancels an event
+// since event handling is done in parallel, this is not a guarantee that the event will not be handled
+// in fact, it is very likely that the event will be handled before the cancellation hits
 func (p *PubSub) CancelEvent(eventName string) (eventFound bool, handlerIds []string) {
 	ev := &Event{Name: eventName, Cancel: true, Data: nil}
 	return p.Publish(ev)
 }
 
+// EventExists checks if an event exists by checking if it has subscribers
 func (p *PubSub) EventExists(eventName string) bool {
 	_, ok := p.subscribers.Load(eventName)
 	return ok
 }
 
+// HasSubscribedTo checks if a subscriber has subscribed to an event
 func (p *PubSub) HasSubscribedTo(eventName string, subscriberId string) bool {
 	subsAny, ok := p.subscribers.Load(eventName)
 	if !ok {
@@ -125,6 +144,7 @@ func (p *PubSub) HasSubscribedTo(eventName string, subscriberId string) bool {
 	return false
 }
 
+// SubCount returns the number of subscribers for an event
 func (p *PubSub) SubCount(eventName string) (subCount int) {
 	subCount = -1
 	subsAny, ok := p.subscribers.Load(eventName)
@@ -143,6 +163,7 @@ func (p *PubSub) SubCount(eventName string) (subCount int) {
 	return subCount
 }
 
+// SubList returns a list of subscribers for an event
 func (p *PubSub) SubList(eventName string) (sublist []string) {
 	sublist = []string{}
 	subsAny, ok := p.subscribers.Load(eventName)
@@ -161,4 +182,34 @@ func (p *PubSub) SubList(eventName string) (sublist []string) {
 		return true
 	})
 	return sublist
+}
+
+// SetState sets a state
+func (p *PubSub) SetState(key string, value any) {
+	p.states.Store(key, value)
+}
+
+// GetState gets a state
+func (p *PubSub) GetState(key string) (value any, found bool) {
+	return p.states.Load(key)
+}
+
+// DeleteState deletes a state
+func (p *PubSub) DeleteState(key string) {
+	p.states.Delete(key)
+}
+
+// ClearStates deletes all states
+func (p *PubSub) ClearStates() {
+	p.states.Range(func(key any, value any) bool {
+		p.states.Delete(key)
+		return true
+	})
+}
+
+// SetStates sets multiple states
+func (p *PubSub) SetStates(states map[string]any) {
+	for key, value := range states {
+		p.states.Store(key, value)
+	}
 }
